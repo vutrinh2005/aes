@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>AES Encrypt/Decrypt</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-gradient-to-br from-blue-300 via-blue-100 to-blue-400 min-h-screen flex items-center justify-center">
+  <div class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-md transition-all duration-300">
+    <!-- Header -->
+    <div class="flex items-center justify-center mb-6">
+      <i class="fa-solid fa-lock text-blue-500 text-3xl mr-2"></i>
+      <h1 class="text-2xl font-bold text-blue-600 text-center">AES File Encrypt / Decrypt</h1>
+    </div>
+
+    <!-- Form -->
+    <form id="aesForm" enctype="multipart/form-data" class="space-y-4">
+      <!-- File input -->
+      <div>
+        <label class="block text-sm font-semibold mb-1 text-gray-700">📁 Chọn file</label>
+        <input type="file" name="file" id="fileInput" class="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm shadow-sm focus:outline-none focus:ring focus:ring-blue-300" required />
+      </div>
+
+      <!-- Key input -->
+      <div>
+        <label class="block text-sm font-semibold mb-1 text-gray-700">🔑 Nhập khóa</label>
+        <input type="text" name="key" id="keyInput" placeholder="Nhập khóa mã hóa..." class="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm shadow-sm focus:outline-none focus:ring focus:ring-blue-300" required />
+      </div>
+
+      <!-- Action buttons -->
+      <div class="flex justify-between gap-4">
+        <button type="button" onclick="submitForm('encrypt')" class="w-1/2 bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 rounded-lg transition">🔐 Mã hóa</button>
+        <button type="button" onclick="submitForm('decrypt')" class="w-1/2 bg-green-500 hover:bg-green-600 text-white font-semibold py-2 rounded-lg transition">🔓 Giải mã</button>
+      </div>
+    </form>
+
+    <!-- Message -->
+    <div id="message" class="mt-5 text-center text-sm font-medium text-gray-700"></div>
+  </div>
+
+  <!-- Script -->
+  <script>
+    async function submitForm(action) {
+      const fileInput = document.getElementById("fileInput");
+      const keyInput = document.getElementById("keyInput");
+      const message = document.getElementById("message");
+
+      if (!fileInput.files[0] || !keyInput.value) {
+        message.textContent = "⚠️ Vui lòng chọn file và nhập khóa.";
+        message.className = "mt-5 text-center text-sm font-medium text-red-600";
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append("file", fileInput.files[0]);
+      formData.append("key", keyInput.value);
+      formData.append("action", action);
+
+      try {
+        message.textContent = "⏳ Đang xử lý...";
+        message.className = "mt-5 text-center text-sm font-medium text-blue-500";
+
+        const response = await fetch("/process", {
+          method: "POST",
+          body: formData,
+        });
+
+        if (!response.ok) {
+          const error = await response.text();
+          message.textContent = "❌ Lỗi: " + error;
+          message.className = "mt-5 text-center text-sm font-medium text-red-600";
+          return;
+        }
+
+        const blob = await response.blob();
+        const downloadUrl = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = downloadUrl;
+        a.download = (action === "encrypt" ? "encrypted_" : "decrypted_") + fileInput.files[0].name;
+        a.click();
+
+        message.textContent = "✅ Hoàn tất! File đã được tải về.";
+        message.className = "mt-5 text-center text-sm font-medium text-green-600";
+      } catch (err) {
+        message.textContent = "❌ Đã xảy ra lỗi khi gửi yêu cầu.";
+        message.className = "mt-5 text-center text-sm font-medium text-red-600";
+      }
+    }
+  </script>
+</body>
+</html>
